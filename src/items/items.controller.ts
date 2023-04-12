@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, UsePipes, ValidationPipe } from '@nestjs/common';
 import {createItemDto} from "./Dto/createItem.dto"
 import { ItemsService } from  "./items.service"
 import { Item } from  "./interfaces/item.interface"
@@ -17,13 +17,14 @@ export class ItemsController {
   }
 
   @Post()
+  @UsePipes(new ValidationPipe())
   async createItem(@Body() createItemDto: createItemDto): Promise<Item> {
    return await this.itemsService.create(createItemDto)
   }
 
   @Patch(':id')
-  async updateItem(@Param() param, @Body() updateitemDto: createItemDto): Promise<Item> {
-    return await this.itemsService.update(param.id, updateitemDto)
+  async updateItem(@Param("id") id: string, @Body() updateitemDto: createItemDto): Promise<Item> {
+    return await this.itemsService.update(id, updateitemDto)
   }
 
   @Delete(':id')
