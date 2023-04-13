@@ -10,7 +10,7 @@ export class UsersService {
   ) {}
 
   async findUserById(id: string): Promise<Users> {
-    return await this.UsersModel.findOne({ _id: id, deleted: false });
+    return await this.UsersModel.findOne({ _id: id, deleted: false }).select('-password -deleted');
   }
 
   async saveUser(user: Users): Promise<Users> {
@@ -18,7 +18,7 @@ export class UsersService {
   }
 
   async findUserWhere(queryOptions = {}): Promise<Users | null> {
-    return await this.UsersModel.findOne({ ...queryOptions });
+    return await this.UsersModel.findOne({ ...queryOptions }).select('-password -deleted');
   }
 
   async getAllUsers(
@@ -28,11 +28,12 @@ export class UsersService {
   ): Promise<Users[] | []> {
     if (limit) {
       return await this.UsersModel.find({ ...queryOptions })
+        .select('-password -deleted')
         .limit(limit)
         .skip(skip);
     }
 
-    return await this.UsersModel.find({ ...queryOptions });
+    return await this.UsersModel.find({ ...queryOptions }).select('-password');
   }
 
   async updateUser(userId: string, updateOptions: Partial<Users>): Promise<Users> {
@@ -40,7 +41,7 @@ export class UsersService {
       { _id: userId },
       { $set: { ...updateOptions } },
       { new: true },
-    );
+    ).select('-password -deleted');
   }
 
   async deleteUser(userId: string): Promise<Users> {
@@ -48,6 +49,6 @@ export class UsersService {
       { _id: userId },
       { $set: { user_deleted: true } },
       { new: true },
-    );
+    ).select('-password -deleted');
   }
 }

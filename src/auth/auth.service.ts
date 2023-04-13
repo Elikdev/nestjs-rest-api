@@ -1,7 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import { Users } from '../users/interfaces/users.interface'
+import * as bcrypt from "bcrypt"
+import { registerUser } from './Dto/registerUser.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,8 +21,17 @@ export class AuthService {
 ];
 constructor(private readonly jwtService: JwtService, private readonly usersService: UsersService) {}
 
-async registerUser(user: Users) {
- let { username } = user
+async hashPassword(password: string) {
+ return bcrypt.hashSync(password, 10)
+}
+
+async comparePassword(hashedPassword: string, password: string){
+ return bcrypt.compareSync(password, hashedPassword)
+} 
+
+
+async registerUser(user: any) {
+ let { username, password } = user
 
  let userNameExists = await this.usersService.findUserWhere({
    $or: [
@@ -33,33 +44,59 @@ async registerUser(user: Users) {
   throw new ConflictException("username already exists")
  }
 
+ user.password = await this.hashPassword(password)
+
  //save the users
- return this.usersService.saveUser(user)
- 
+ let newUser = await this.usersService.saveUser(user)
+
+ let stringifiedUser = JSON.stringify(newUser)
+
+ let parsedUser = JSON.parse(stringifiedUser)
+
+ delete parsedUser?.password
+ delete parsedUser?.deleted
+
+ return parsedUser
 }
 
 async validateUser(username: string, password: string): Promise<any> {
- const user = this.users.find(user => user.username === username && user.password === password)
+ const user = await this.usersService.findUserWhere({username})
 
  if(user) {
-  const {password, ...result} = user
+  //check if password match
+  let isPasswordValid = await this.comparePassword(user.password, password)
 
-  return result
+  if(!isPasswordValid){
+   throw new BadRequestException("incorrect username/password")
+  }
+
+  return user
  }
 
  return null
 }
 
 async login(user: any) {
- let payload = {username: user.username, user_id: user.userId}
+ let payload = { username: user.username, user_id: user._id }
+
+let stringifiedUser = JSON.stringify(user)
+
+let parsedUser = JSON.parse(stringifiedUser)
+
+ let { password, deleted,  ...result} = parsedUser
 
  return {
+   user: result,
    access_token: this.jwtService.sign(payload),
  };
 }
 
 async getUserProfile(user: any) {
- const userExists = this.users.find(u => u.userId === user.user_id)
+ const userExists = this.usersService.findUserById(user.user_id)
+
+ if(!userExists) {
+  throw new NotFoundException("Account does not exist")
+ }
 
  return userExists
 }

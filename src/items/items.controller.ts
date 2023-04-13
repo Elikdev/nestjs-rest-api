@@ -1,11 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, UsePipes, ValidationPipe, UseInterceptors } from '@nestjs/common';
 import {createItemDto} from "./Dto/createItem.dto"
 import { ItemsService } from  "./items.service"
 import { Item } from  "./interfaces/item.interface"
+import { TransformInterceptor } from 'src/shared/interceptors/transform.interceptors';
 
 @Controller('items')
 export class ItemsController {
   constructor(private readonly itemsService: ItemsService) {}
+
+  @UseInterceptors(new TransformInterceptor("items fetched successfully!"))
   @Get()
   async findAll(): Promise<Item[]> {
     return this.itemsService.findAll();

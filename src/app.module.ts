@@ -9,6 +9,8 @@ import { ConfigurationModule } from "./config/config.module"
 import { ConfigurationService } from "./config/config.service"
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { SharedModule } from './shared/shared.module';
+
 
 
 @Module({
@@ -29,6 +31,7 @@ import { UsersModule } from './users/users.module';
     ItemsModule,
     AuthModule,
     UsersModule,
+    SharedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
